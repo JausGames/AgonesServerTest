@@ -26,10 +26,10 @@ spec:
       containers:
       - name: game-server
         image: jausseran/agoneserver:1.0
-      resources:
-        requests:
-          memory: "1000Mi"
-          cpu: "500m"
-        limits:
-          memory: "2000Mi"
-          cpu: "1000m"
+        resources:
+          requests:
+            memory: "1000Mi"
+            cpu: "500m"
+          limits:
+            memory: "2000Mi"
+            cpu: "1000m"
