@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: game-server
-        image: https://raw.githubusercontent.com/JausGames/AgonesServerTest/main/gameserver.yaml
+        image: jausseran/agoneserver:1.0
         resources:
           requests:
             memory: "512Mi"
