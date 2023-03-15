@@ -21,7 +21,7 @@ public class ServerInitializer : MonoBehaviour
     int pingCount = 49;
 
     //string ipAdress = "172.30.114.48";
-    string ipAdress = "127.0.0.1";
+    string ipAdress = "20.19.185.71";
 
 
     // Start is called before the first frame update
@@ -36,7 +36,8 @@ public class ServerInitializer : MonoBehaviour
 
         Server();
 
-        StartCoroutine(StartAgoneServer());
+
+
         /*#if UNITY_EDITOR
             //Is this unity editor instance opening a clone project?
             if (ClonesManager.IsClone())
@@ -51,42 +52,20 @@ public class ServerInitializer : MonoBehaviour
         #endif*/
     }
 
-    IEnumerator StartAgoneServer()
-    {
-        var connected = TryConnectToAgonesAsync();
-
-        while (!connected.IsCompleted)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
-        if (connected.Result)
-        {
-            var ready = IsAgonesServerReadyAsync();
-            while (!ready.IsCompleted)
-            {
-                yield return new WaitForEndOfFrame();
-            }
-
-            if (ready.Result)
-            {
-                Debug.Log("____ Agones server ready ____");
-            }
-            else
-            {
-                Debug.Log("____ Agones server reached but not ready ____");
-            }
-        }
-        else
-        {
-            Debug.Log("____ Agones server unreached ____");
-        }
-    }
-
-    async Task<bool> TryConnectToAgonesAsync()
+    async void TryConnectToAgonesAsync()
     {
         var agones = GetComponent<Agones.AgonesSdk>();
-        return await agones.Connect();
+        bool connected = await agones.Connect();
+        if (!connected)
+        {
+            Debug.Log("Agones: Connect() failed");
+            return;
+        }
+
+        Debug.Log("Agones: .. connected");
+
+        Debug.Log("Agones: Marking as ready...");
+        bool readied = await agones.Ready();
     }
 
     async Task<bool> IsAgonesServerReadyAsync()
@@ -150,6 +129,7 @@ public class ServerInitializer : MonoBehaviour
         // Temporary workaround to treat host as client
         if (NetworkManager.Singleton.IsHost)
         {
+            TryConnectToAgonesAsync();
             //HandleClientConnected(NetworkManager.ServerClientId);
         }
     }

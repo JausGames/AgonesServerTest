@@ -21,7 +21,7 @@ public class ClientInitializer : MonoBehaviour
     int pingCount = 49;
 
     //string ipAdress = "172.30.114.48";
-    string ipAdress = "127.0.0.1";
+    string ipAdress = "20.19.185.71";
 
 
     // Start is called before the first frame update
