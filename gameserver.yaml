@@ -1,7 +1,7 @@
 apiVersion: "stable.agones.dev/v1alpha1"
 kind: GameServer
 metadata:
-  generateName: "agones-unity-server-sample-"
+  generateName: "game-server-"
 spec:
   ports:
   - name: default
