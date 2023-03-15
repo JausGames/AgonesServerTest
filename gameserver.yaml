@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: game-server
-        image: jausseran/agoneserver:1.0
+        image: https://raw.githubusercontent.com/JausGames/AgonesServerTest/main/gameserver.yaml
         imagePullPolicy: Never
       resources:
         requests:
