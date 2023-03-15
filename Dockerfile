@@ -6,4 +6,4 @@ COPY Builds/Server/ ./
 
 # workaround
 # wait until the sidecar is ready
-CMD sleep 1 && ./server.x86_64
+CMD chmod +x ./Server.x86_64 && sleep 1 && ./Server.x86_64
