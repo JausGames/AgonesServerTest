@@ -5,6 +5,7 @@ using UnityEngine.Events;
 
 public class ShooterController : NetworkBehaviour
 {
+    [SerializeField] private float offset = 45f;
     [Header("Inputs")]
     [SerializeField] NetworkVariable<Vector3> look = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] GameObject ui;
@@ -56,7 +57,7 @@ public class ShooterController : NetworkBehaviour
         //hitablemask = (1 << 3);
         if (IsOwner && IsLocalPlayer)
         {
-            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.lockState = CursorLockMode.Confined;
             //body.isKinematic = false;
             //cameraContainer.GetComponent<CameraFollow>().GetComponentInChildren<Camera>().enabled = true;
             //ui.SetActive(true);
@@ -80,7 +81,9 @@ public class ShooterController : NetworkBehaviour
     }
     private void LateUpdate()
     {
-        //PlayAnimationServerRpc(angle, target);
+        RotatePlayer();
+
+        PlayAnimationServerRpc();
         
     }
 
@@ -155,21 +158,34 @@ public class ShooterController : NetworkBehaviour
 
 
     [ServerRpc]
-    void PlayAnimationServerRpc(float angle, Vector3 target)
+    void PlayAnimationServerRpc()
     {
-        PlayAnimationClientRpc(angle, target);
+        PlayAnimationClientRpc();
     }
 
     [ClientRpc]
-    void PlayAnimationClientRpc(float angle, Vector3 target)
+    void PlayAnimationClientRpc()
     {
         if(!IsOwner)
         {
-            //animatorController.Angle = angle;
-            this.target.position = target;
+            RotatePlayer();
         }
         //animatorController.Direction = (x * Vector2.right + y * Vector2.up).normalized;
     }
+
+    private void RotatePlayer()
+    {
+        //animatorController.Angle = angle;
+        var Target = look.Value;
+        // Get Angle in Radians
+        float AngleRad = Mathf.Atan2(Target.y - transform.position.y, Target.x - transform.position.x) - offset;
+        // Get Angle in Degrees
+        float AngleDeg = (180f / Mathf.PI) * AngleRad;
+
+        //transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, 0, AngleDeg), Time.deltaTime * 20f);
+        transform.rotation = Quaternion.Euler(0, 0, AngleDeg);
+    }
+
     internal void StartReloading()
     {
         if (reloading || ((Weapon)currentWeapon).RemainingAmmo == 0) return;
@@ -240,7 +256,7 @@ public class ShooterController : NetworkBehaviour
 
     internal void Look(Vector2 vector2)
     {
-        look.Value = vector2;
+        look.Value = vector2.normalized;
     }
     //Called on client rpc
     public void Die()

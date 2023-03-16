@@ -29,6 +29,7 @@ public class PlayerController : NetworkBehaviour
 
         //move.Value = new Vector3(horizontalInput, verticalInput, 0);
 
-        transform.Translate(move.Value * moveSpeed * Time.deltaTime);
+        //transform.Translate(move.Value * moveSpeed * Time.deltaTime);
+        transform.position += (Vector3)move.Value * moveSpeed * Time.deltaTime;
     }
 }

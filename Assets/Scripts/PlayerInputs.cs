@@ -55,7 +55,10 @@ namespace Inputs
         private void OnLook(Vector2 vector2)
         {
             if (shooter == null || !IsOwner) return;
-            shooter.Look(vector2);
+            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(vector2);
+            worldPosition.z = 0f;
+            Debug.DrawLine(transform.position, worldPosition);
+            shooter.Look(worldPosition);
         }
 
         public void OnShoot(bool context)

@@ -5085,6 +5085,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee9f7ad34a6376e48a7cbb710e8d37ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  offset: 45.55
   look:
     m_InternalValue: {x: 0, y: 0, z: 0}
   ui: {fileID: 3556001600334619012}
