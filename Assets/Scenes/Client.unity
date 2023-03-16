@@ -159,8 +159,8 @@ MonoBehaviour:
   MaxConnections: 100
   MaxSentMessageQueueSize: 128
   ConnectAddress: 51.103.21.141
-  ConnectPort: 7873
-  ServerListenPort: 7873
+  ConnectPort: 7432
+  ServerListenPort: 7432
   MessageSendMode: 0
 --- !u!114 &322835285
 MonoBehaviour:

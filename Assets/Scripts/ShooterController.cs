@@ -157,7 +157,7 @@ public class ShooterController : NetworkBehaviour
     }
 
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     void PlayAnimationServerRpc()
     {
         PlayAnimationClientRpc();
