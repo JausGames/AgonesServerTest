@@ -9,6 +9,8 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] NetworkVariable<Vector2> move = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private float moveSpeed = 5f;
 
+    public Vector2 Move { get => move.Value; set => move.Value = value; }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -19,13 +21,13 @@ public class PlayerController : NetworkBehaviour
     void Update()
     {
         if (!IsOwner) return;
-        float horizontalInput = Input.GetAxis("Horizontal");
+        //float horizontalInput = Input.GetAxis("Horizontal");
         //Get the value of the Horizontal input axis.
 
-        float verticalInput = Input.GetAxis("Vertical");
+        //float verticalInput = Input.GetAxis("Vertical");
         //Get the value of the Vertical input axis.
 
-        move.Value = new Vector3(horizontalInput, verticalInput, 0);
+        //move.Value = new Vector3(horizontalInput, verticalInput, 0);
 
         transform.Translate(move.Value * moveSpeed * Time.deltaTime);
     }

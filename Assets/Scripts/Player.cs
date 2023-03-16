@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -15,6 +16,8 @@ public class Player : NetworkBehaviour
     [SerializeField] HealthBar healthbar;
     [SerializeField] PlayerController controller;
 
+    public NetworkVariable<float> Health { get => health; set => health = value; }
+    public float MaxHealth { get => maxHealth; set => maxHealth = value; }
 
     public void Start()
     {
@@ -71,7 +74,12 @@ public class Player : NetworkBehaviour
     private void KillPlayerClientRpc(ulong playerid)
     {
         Debug.Log("Player, KillPlayerClientRpc : playerid = " + playerid);
-        //GetNetworkObject(playerid).gameObject.GetComponentInChildren<Player>().controller.Die();
+        GetNetworkObject(playerid).gameObject.GetComponentInChildren<Player>().Die();
+    }
+
+    private void Die()
+    {
+        Destroy(gameObject);
     }
 
     #endregion
