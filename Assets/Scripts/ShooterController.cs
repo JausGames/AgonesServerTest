@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
+using System.Collections;
 
 public class ShooterController : NetworkBehaviour
 {
@@ -29,6 +31,7 @@ public class ShooterController : NetworkBehaviour
     [SerializeField] Quaternion rotationOffset;
     private bool reloading;
     private bool alive = true;
+    private float lookSmoothVelocity = 2f;
 
     public Transform CameraContainer { get => cameraContainer; set => cameraContainer = value; }
 
@@ -49,6 +52,8 @@ public class ShooterController : NetworkBehaviour
 
         }
     }
+
+    public bool Alive { get => alive; set => alive = value; }
 
 
     // Update is called once per frame
@@ -175,15 +180,13 @@ public class ShooterController : NetworkBehaviour
 
     private void RotatePlayer()
     {
-        //animatorController.Angle = angle;
-        var Target = look.Value;
-        // Get Angle in Radians
-        float AngleRad = Mathf.Atan2(Target.y - transform.position.y, Target.x - transform.position.x) - offset;
-        // Get Angle in Degrees
-        float AngleDeg = (180f / Mathf.PI) * AngleRad;
+        /*var mouseScreenPos = look.Value;
+        var startingScreenPos = Camera.main.WorldToScreenPoint(transform.position);
+        mouseScreenPos.x -= startingScreenPos.x;
+        mouseScreenPos.y -= startingScreenPos.y;*/
+        var angle = Mathf.Atan2(look.Value.y - transform.position.y, look.Value.x - transform.position.x) * Mathf.Rad2Deg + offset;
+        transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
 
-        //transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, 0, AngleDeg), Time.deltaTime * 20f);
-        transform.rotation = Quaternion.Euler(0, 0, AngleDeg);
     }
 
     internal void StartReloading()
@@ -207,9 +210,16 @@ public class ShooterController : NetworkBehaviour
     [ClientRpc]
     void PlayReloadClientRpc()
     {
-        Reload();
+        StartCoroutine(WaitToReload());
+        //Reload();
         //ik.enabled = false;
         //animatorController.Reload();
+    }
+    IEnumerator WaitToReload()
+    {
+        yield return new WaitForSeconds(.7f);
+
+        Reload();
     }
     internal void Shoot(bool context)
     {
@@ -256,31 +266,24 @@ public class ShooterController : NetworkBehaviour
 
     internal void Look(Vector2 vector2)
     {
-        look.Value = vector2.normalized;
+        look.Value = vector2;
     }
     //Called on client rpc
     public void Die()
     {
         if (!alive) return;
+        
         alive = false;
         //animatorController.Die();
     }
-    public void Respawn()
-    {
-        if(IsOwner)
-            SubmitRespawnServerRpc();
-    }
-
-    [ServerRpc]
-    private void SubmitRespawnServerRpc()
-    {
-        player.Health.Value = player.MaxHealth;
-        alive = true;
-        SetAliveClientRpc();
-    }
     [ClientRpc]
-    private void SetAliveClientRpc()
+    public void SetAliveClientRpc()
     {
         alive = true;
+    }
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(look.Value, .2f);
     }
 }

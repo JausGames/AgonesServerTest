@@ -15,12 +15,14 @@ public class Player : NetworkBehaviour
     [SerializeField] GameObject ui;
     [SerializeField] HealthBar healthbar;
     [SerializeField] PlayerController controller;
+    [SerializeField] ShooterController shooter;
 
     public NetworkVariable<float> Health { get => health; set => health = value; }
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
 
     public void Start()
     {
+        shooter = GetComponent<ShooterController>();
         if (IsServer)
         {
             health.Value = maxHealth;
@@ -79,7 +81,36 @@ public class Player : NetworkBehaviour
 
     private void Die()
     {
-        Destroy(gameObject);
+        shooter.Die();
+        controller.Die();
+        GetComponent<Collider2D>().isTrigger = true;
+        GetComponent<Collider2D>().enabled = false;
+
+        StartCoroutine(Respawn());
+
+    }
+    public IEnumerator Respawn()
+    {
+        yield return new WaitForSeconds(5f);
+
+        if (IsOwner)
+            SubmitRespawnServerRpc();
+    }
+
+    [ServerRpc]
+    private void SubmitRespawnServerRpc()
+    {
+        Health.Value = MaxHealth;
+        shooter.Alive = true;
+        SetAliveClientRpc();
+        shooter.SetAliveClientRpc();
+        controller.SetAliveClientRpc();
+    }
+    [ClientRpc]
+    public void SetAliveClientRpc()
+    {
+        GetComponent<Collider2D>().isTrigger = false;
+        GetComponent<Collider2D>().enabled = true;
     }
 
     #endregion

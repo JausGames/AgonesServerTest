@@ -5016,6 +5016,7 @@ MonoBehaviour:
   ui: {fileID: 3556001600334619012}
   healthbar: {fileID: 3137014083879447234}
   controller: {fileID: 3556001599063362625}
+  shooter: {fileID: 6842795326458926481}
 --- !u!114 &3556001599063362626
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5085,7 +5086,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee9f7ad34a6376e48a7cbb710e8d37ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  offset: 45.55
+  offset: -90
   look:
     m_InternalValue: {x: 0, y: 0, z: 0}
   ui: {fileID: 3556001600334619012}
@@ -10396,8 +10397,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 10
-  coolDown: 0.4
-  maximumAmmo: 36
+  coolDown: 0.2
+  maximumAmmo: 2147483647
   magazineCapacity: 6
   recoil: {x: -2, y: -0, z: -0}
   ammo: 6

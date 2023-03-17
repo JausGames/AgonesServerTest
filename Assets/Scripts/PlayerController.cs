@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -8,6 +9,7 @@ public class PlayerController : NetworkBehaviour
     [Header("Inputs")]
     [SerializeField] NetworkVariable<Vector2> move = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private float moveSpeed = 5f;
+    private bool alive = true;
 
     public Vector2 Move { get => move.Value; set => move.Value = value; }
 
@@ -20,7 +22,7 @@ public class PlayerController : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!IsOwner) return;
+        if (!IsOwner || !alive) return;
         //float horizontalInput = Input.GetAxis("Horizontal");
         //Get the value of the Horizontal input axis.
 
@@ -31,5 +33,15 @@ public class PlayerController : NetworkBehaviour
 
         //transform.Translate(move.Value * moveSpeed * Time.deltaTime);
         transform.position += (Vector3)move.Value * moveSpeed * Time.deltaTime;
+    }
+
+    internal void Die()
+    {
+        alive = false;
+    }
+    [ClientRpc]
+    internal void SetAliveClientRpc()
+    {
+        alive = true;
     }
 }

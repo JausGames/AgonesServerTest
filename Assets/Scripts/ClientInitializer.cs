@@ -113,10 +113,10 @@ public class ClientInitializer : MonoBehaviour
     }
     public void Host()
     {
-        if (inputName.text == "") return;
+        //if (inputName.text == "") return;
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
-        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(inputName.text);
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
         NetworkManager.Singleton.StartHost();
     }
 
@@ -185,8 +185,8 @@ public class ClientInitializer : MonoBehaviour
         var clientId = request.ClientNetworkId;
 
         // Additional connection data defined by user code
-        var connectionData = request.Payload;
-        var playerName = Encoding.Default.GetString(connectionData);
+        //var connectionData = request.Payload;
+        //var playerName = Encoding.Default.GetString(connectionData);
 
         // Your approval logic determines the following values
         response.Approved = true;
@@ -204,7 +204,7 @@ public class ClientInitializer : MonoBehaviour
         // If additional approval steps are needed, set this to true until the additional steps are complete
         // once it transitions from true to false the connection approval response will be processed.
         response.Pending = false;
-        Debug.Log("connection approval : name = " + playerName +", id = " + clientId);
+        //Debug.Log("connection approval : name = " + playerName +", id = " + clientId);
 
         GameObject go = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
         var networkObject = go.GetComponent<NetworkObject>();
