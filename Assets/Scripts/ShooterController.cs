@@ -223,7 +223,7 @@ public class ShooterController : NetworkBehaviour
     }
     internal void Shoot(bool context)
     {
-        if (!IsOwner || !context || currentWeapon == null) return;
+        if (!IsOwner || !context || currentWeapon == null || !alive) return;
 
         currentWeapon.Use(this);
     }
