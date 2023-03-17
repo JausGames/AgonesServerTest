@@ -34,7 +34,7 @@ public class ClientInitializer : MonoBehaviour
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnect;
 
-        //Client();
+        Client();
 
         //StartCoroutine(StartAgoneServer());
         /*#if UNITY_EDITOR
