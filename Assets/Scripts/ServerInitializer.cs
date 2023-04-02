@@ -129,9 +129,9 @@ public class ServerInitializer : MonoBehaviour
         // Temporary workaround to treat host as client
         if (NetworkManager.Singleton.IsHost)
         {
-            TryConnectToAgonesAsync();
             //HandleClientConnected(NetworkManager.ServerClientId);
         }
+        TryConnectToAgonesAsync();
     }
     private void HandleClientConnected(ulong clientId)
     {
