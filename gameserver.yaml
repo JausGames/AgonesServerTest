@@ -1,6 +1,7 @@
 apiVersion: "agones.dev/v1"
 kind: GameServer
 metadata:
+  namespace: gameserver
   generateName: "game-server-"
 spec:
   ports:
