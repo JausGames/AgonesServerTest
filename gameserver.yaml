@@ -14,8 +14,8 @@ spec:
         image: jausseran/agoneserver:1.11
         resources:
           requests:
-            memory: "32Mi"
-            cpu: "5m"
+            memory: "64Mi"
+            cpu: "10m"
           limits:
-            memory: "32Mi"
-            cpu: "5m"
+            memory: "64Mi"
+            cpu: "10m"
