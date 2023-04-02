@@ -79,13 +79,13 @@ public class ServerInitializer : MonoBehaviour
     }
     public void Server()
     {
+        TryConnectToAgonesAsync();
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
         //NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes();
         NetworkManager.Singleton.StartServer();
 
 
-        TryConnectToAgonesAsync();
     }
     public void Host()
     {

@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: game-server
-        image: jausseran/agoneserver:1.10
+        image: jausseran/agoneserver:1.11
         resources:
           requests:
             memory: "512Mi"
