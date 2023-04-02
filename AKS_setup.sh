@@ -3,9 +3,11 @@
 AKS_RESOURCE_GROUP=multigame     # Name of the resource group your AKS cluster will be created in
 AKS_NAME=gamecluster                 # Name of your AKS cluster
 AKS_LOCATION=francecentral          # Azure region in which you'll deploy your AKS cluster
+AKS_NAMESPACE=gameserver          # Azure namespace
+RESOURCE_GROUP_WITH_AKS_RESOURCES=MC_multigame_gamecluster_gameserver        # Azure namespace
 
 # Create the Resource Group where your AKS resource will be installed
-az group create --name $AKS_RESOURCE_GROUP --location $AKS_LOCATION
+az group create --name $AKS_RESOURCE_GROUP --location $AKS_LOCATION --namespace
 
 # Create the AKS cluster - this might take some time. Type 'az aks create -h' to see all available options
 
@@ -23,7 +25,7 @@ az aks get-credentials --resource-group $AKS_RESOURCE_GROUP --name $AKS_NAME
 
 ###   Security group 
 az network nsg rule create \
-  --resource-group RESOURCE_GROUP_WITH_AKS_RESOURCES \
+  --resource-group $AKS_AGONES_RESOURCE_GROUP \
   --nsg-name NSG_NAME \
   --name AgonesUDP \
   --access Allow \
@@ -39,3 +41,9 @@ az network nsg rule create \
 helm repo add agones https://agones.dev/chart/stable
 helm repo update
 helm install my-release --namespace agones-system --create-namespace agones/agones
+
+
+
+
+#   test api :
+https://management.azure.com/subscriptions/subid1/resourceGroups
