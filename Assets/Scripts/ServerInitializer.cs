@@ -68,12 +68,6 @@ public class ServerInitializer : MonoBehaviour
         bool readied = await agones.Ready();
     }
 
-    async Task<bool> IsAgonesServerReadyAsync()
-    {
-
-        var agones = GetComponent<Agones.AgonesSdk>(); 
-        return await agones.Ready();
-    }
     private void OnDestroy()
     {
         // Prevent error in the editor
@@ -89,6 +83,9 @@ public class ServerInitializer : MonoBehaviour
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
         //NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes();
         NetworkManager.Singleton.StartServer();
+
+
+        TryConnectToAgonesAsync();
     }
     public void Host()
     {
@@ -131,7 +128,6 @@ public class ServerInitializer : MonoBehaviour
         {
             //HandleClientConnected(NetworkManager.ServerClientId);
         }
-        TryConnectToAgonesAsync();
     }
     private void HandleClientConnected(ulong clientId)
     {

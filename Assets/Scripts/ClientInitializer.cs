@@ -50,51 +50,6 @@ public class ClientInitializer : MonoBehaviour
             }
         #endif*/
     }
-
-    IEnumerator StartAgoneServer()
-    {
-        var connected = TryConnectToAgonesAsync();
-
-        while (!connected.IsCompleted)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
-        if (connected.Result)
-        {
-            var ready = IsAgonesServerReadyAsync();
-            while (!ready.IsCompleted)
-            {
-                yield return new WaitForEndOfFrame();
-            }
-
-            if (ready.Result)
-            {
-                Debug.Log("____ Agones server ready ____");
-            }
-            else
-            {
-                Debug.Log("____ Agones server reached but not ready ____");
-            }
-        }
-        else
-        {
-            Debug.Log("____ Agones server unreached ____");
-        }
-    }
-
-    async Task<bool> TryConnectToAgonesAsync()
-    {
-        var agones = GetComponent<Agones.AgonesSdk>();
-        return await agones.Connect();
-    }
-
-    async Task<bool> IsAgonesServerReadyAsync()
-    {
-
-        var agones = GetComponent<Agones.AgonesSdk>(); 
-        return await agones.Ready();
-    }
     private void OnDestroy()
     {
         // Prevent error in the editor
