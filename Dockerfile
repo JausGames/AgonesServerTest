@@ -11,18 +11,19 @@ CMD chmod +x ./Server.x86_64 && sleep 1 && ./Server.x86_64
 
 # syntax=docker/dockerfile:1
 
-FROM golang:1.16-alpine
+FROM golang:1.20-alpine
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
+COPY FleetAPI/go.mod FleetAPI/go.sum FleetAPI/*.go ./ 
+COPY FleetAPI/.kube/config ./.kube/
 
-COPY *.go ./
+RUN go mod download && go mod verify
 
-RUN go build -o /fleetapi
+RUN go get agones.dev/agones/pkg/util/runtime@v1.30.0 \
+&& go get github.com/spf13/viper@v1.7.0 \
+&& go build -v -o /usr/local/bin/app ./...
 
 EXPOSE 8080
 
-CMD [ "/fleetapi" ]
+#CMD [ "app" ]

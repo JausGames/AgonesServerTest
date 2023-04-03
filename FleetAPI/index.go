@@ -54,8 +54,8 @@ type GameServer struct {
 
 func main() {
 	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, "k8s", ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	if home := homedir.Expand(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, "/usr/src/app", ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "C:\\Users\\user\\Documents\\GO\\k8s\\.kube\\config", "absolute path to the kubeconfig file")
 	}
