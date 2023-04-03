@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 AS GameServer
 
 WORKDIR /unity
 
@@ -11,12 +11,12 @@ CMD chmod +x ./Server.x86_64 && sleep 1 && ./Server.x86_64
 
 # syntax=docker/dockerfile:1
 
-FROM golang:1.20-alpine
+FROM golang:1.19-alpine  AS MatchMakingAPI
 
 WORKDIR /usr/src/app
 
 COPY FleetAPI/go.mod FleetAPI/go.sum FleetAPI/*.go ./ 
-COPY FleetAPI/.kube/config ./.kube/
+COPY FleetAPI/.kube/config /root/.kube/
 
 RUN go mod download && go mod verify
 
@@ -26,4 +26,4 @@ RUN go get agones.dev/agones/pkg/util/runtime@v1.30.0 \
 
 EXPOSE 8080
 
-#CMD [ "app" ]
+CMD [ "app" ]
