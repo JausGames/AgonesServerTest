@@ -88,9 +88,9 @@ public class ClientInitializer : MonoBehaviour
     {
         var http = gameObject.AddComponent<HttpRequestHelper>();
         CoroutineWithData cd = new CoroutineWithData(this, http.GetServerList());
-        StartCoroutine(WaitForLogin(cd));
+        StartCoroutine(WaitForGameServers(cd));
     }
-    private IEnumerator WaitForLogin(CoroutineWithData corout)
+    private IEnumerator WaitForGameServers(CoroutineWithData corout)
     {
         //wait
         while (!(corout.result is string) || corout.result == null)
