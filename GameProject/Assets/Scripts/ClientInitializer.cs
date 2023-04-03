@@ -77,9 +77,37 @@ public class ClientInitializer : MonoBehaviour
 
     public void Client()
     {
+        CheckForServers();
         //if (inputName.text == "") return;
         // Set password ready to send to the server to validate
         //NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(inputName.text);
+    }
+
+    // Update is called once per frame
+    void CheckForServers()
+    {
+        var http = gameObject.AddComponent<HttpRequestHelper>();
+        CoroutineWithData cd = new CoroutineWithData(this, http.GetServerList());
+        StartCoroutine(WaitForLogin(cd));
+    }
+    private IEnumerator WaitForLogin(CoroutineWithData corout)
+    {
+        //wait
+        while (!(corout.result is string) || corout.result == null)
+        {
+            Debug.Log("EditorUI, WaitForLogin : data is null");
+            yield return false;
+        }
+        //do stuff
+        var gs = JsonHelper.FromJson<GameServer>((string)corout.result);
+        //unetTransform.ConnectAddress = 
+
+        Debug.Log(gs);
+
+        unetTransform.ConnectAddress = gs[0].ip;
+        unetTransform.ConnectPort = gs[0].port;
+        unetTransform.ServerListenPort = gs[0].port;
+
         NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
         NetworkManager.Singleton.StartClient();
     }

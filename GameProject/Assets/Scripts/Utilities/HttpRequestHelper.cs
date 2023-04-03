@@ -6,12 +6,12 @@ using System;
 
 public class HttpRequestHelper : MonoBehaviour
 {
-    const string API_URL = "http://localhost/server/ready:8080";
+    const string API_URL = "http://localhost/servers/ready";
 
 
     public IEnumerator GetServerList()
     {
-        UnityWebRequest www = UnityWebRequest.Get(API_URL + "mazelist");
+        UnityWebRequest www = UnityWebRequest.Get(API_URL);
         //www.SetRequestHeader("USERKEY", MazeUser.GetInstance().GetApiKey());
         yield return www.SendWebRequest();
         string output = null;
