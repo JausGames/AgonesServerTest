@@ -43,7 +43,7 @@ import (
 type GameServer struct {
 	Name      string `json:"name"`
 	Kind      string `json:"kind"`
-	Namespace string `json:"namespace"`
+	Namespace string `json:"nspace"`
 	Status    string `json:"status"`
 	Ip        string `json:"ip"`
 	Port      int32  `json:"port"`
@@ -88,7 +88,7 @@ func main() {
 
 		fmt.Printf("There are %d GS in the cluster\n", len(listGS.Items))
 
-		jsonBytes := "{\"gameservers\":"
+		jsonBytes := "{\"Items\":["
 
 		for i := 0; i < len(listGS.Items); i++ {
 			podname := listGS.Items[i].GetName()
@@ -137,7 +137,7 @@ func main() {
 			//append(jsonBytes, json)
 
 		}
-		jsonBytes += "}"
+		jsonBytes += "]}"
 		fmt.Fprintf(w, jsonBytes)
 	})
 
