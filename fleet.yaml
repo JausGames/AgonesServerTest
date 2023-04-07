@@ -53,11 +53,11 @@ spec:
         spec:
           containers:
           - name: game-server
-            image: jausseran/agoneserver:1.9
+            image: jausseran/agoneserver:1.11
             resources:
               requests:
-                memory: "512Mi"
-                cpu: "250m"
-              limits:
-                memory: "512Mi"
-                cpu: "520m"
+              memory: "64Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "50m"
