@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
     public class BasicEnemy : Hitable
@@ -18,6 +20,7 @@ using UnityEngine;
         [Space]
         [Header("Componenent")]
         private EnemyAnimatorEvent animatorEvent;
+        private WeaponTrigger trigger;
         [SerializeField] private Weapon weapon;
 
 
@@ -26,8 +29,11 @@ using UnityEngine;
         [SerializeField] FSM fsm = new FSM();
         Animator animator;
         AiController controller;
+        float angleoffset = 180f;
 
-        private void Awake()
+    public Vector3 Forward { get => transform.GetChild(0).forward; }
+
+    private void Start()
         {
             body = GetComponent<Rigidbody2D>();
             controller = GetComponent<AiController>();
@@ -43,55 +49,76 @@ using UnityEngine;
         // Update is called once per frame
         void Update()
         {
-
+        //if (!IsOwner) return;
             CheckNextState();
 
             animator.SetFloat("Speed", controller.Speed);
 
             switch (fsm.currentState.type)
             {
-                case StateType.CheckForTarget:
+            case StateType.CheckForTarget:
 
-                    break;
+                break;
 
-                case StateType.MoveToTarget:
-                    if ((controller.Destination - target.transform.position).sqrMagnitude > newDestinationRadius)
-                    {
-                        controller.Destination = target.transform.position;
-                    }
-                    break;
+            case StateType.MoveToTarget:
+                if ((controller.Destination - target.transform.position).sqrMagnitude > newDestinationRadius)
+                {
+                    controller.Destination = target.transform.position;
+                }
+                transform.GetChild(0).localRotation = GetNewRotation();
+                break;
 
-                case StateType.HitTarget:
+            case StateType.HitTarget:
 
-                    transform.rotation = GetNewRotation();
-                    break;
+                transform.GetChild(0).localRotation = GetNewRotation();
+                StartCoroutine(UseWeapon());
+                break;
 
-                case StateType.Dead:
+            case StateType.Dead:
 
-                    if (Time.time > deadTime + 4f && Time.time < deadTime + 1f)
-                        transform.localScale -= Vector3.one * .2f * Time.deltaTime;
-                    else if (Time.time > deadTime + 1f)
-                        Destroy(gameObject);
-                    break;
+                if (Time.time > deadTime + 4f && Time.time < deadTime + 1f)
+                    transform.localScale -= Vector3.one * .2f * Time.deltaTime;
+                else if (Time.time > deadTime + 1f)
+                    DestroyObjectServerRpc(NetworkObjectId);
+                break;
 
-                case StateType.InAttack:
+            case StateType.InAttack:
 
-                    transform.rotation = GetNewRotation();
-                    break;
+                transform.GetChild(0).localRotation = GetNewRotation();
+                break;
 
-                default:
-                    break;
-            }
+            default:
+                break;
         }
+        //transform.GetChild(0).localRotation = GetNewRotation();
+    }
 
-        private Quaternion GetNewRotation()
-        {
-            Vector3 aiToTarget = target.transform.position - transform.position;
-            aiToTarget.y = 0f;
-            Quaternion newRotatation = Quaternion.LookRotation(aiToTarget);
-            var result = Quaternion.RotateTowards(transform.rotation, newRotatation, rotationSpeed * Time.deltaTime);
-            return result;
-        }
+    private IEnumerator UseWeapon()
+    {
+        fsm.currentState.type = StateType.InAttack;
+        yield return new WaitForSeconds(.2f);
+        weapon.Use();
+        yield return new WaitForSeconds(.3f);
+        if(fsm.currentState.type == StateType.InAttack)
+            fsm.currentState.type = StateType.CheckForTarget;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DestroyObjectServerRpc(ulong networkObjectId)
+    {
+        GetNetworkObject(networkObjectId).Despawn();
+    }
+
+    private Quaternion GetNewRotation()
+    {
+        if (target == null) return transform.GetChild(0).localRotation;
+        Vector2 aiToTarget = (target.transform.position - transform.position).normalized;
+
+        float rot_z = Mathf.Atan2(-aiToTarget.y, aiToTarget.x) * Mathf.Rad2Deg;
+        //Debug.Log("GetNewRotation : rot_z = " + (rot_z - 90f) + ", x = " + transform.GetChild(0).localEulerAngles.x+ ", y = " + transform.GetChild(0).localEulerAngles.y+ ", z = " + transform.GetChild(0).localEulerAngles.z);
+        return Quaternion.Euler(-90f, 0f, rot_z - 90f);
+        //return Quaternion.Euler(-90f, 0f, Mathf.MoveTowardsAngle(transform.GetChild(0).localEulerAngles.y, rot_z - 90f, Time.deltaTime));
+    }
 
         private Hitable CheckEnemy()
         {
@@ -109,13 +136,13 @@ using UnityEngine;
         {
             base.TakeDamage(damage, knockback, knocktime, direction, killerid);
 
-            if (fsm.currentState.type != StateType.Dead && knockback > 0f)
+            if (knockback > 0f)
             {
                 //body.velocity = Vector3.zero;
                 knockoutTime = Time.time + knocktime;
                 controller.IsActive = false;
                 if(fsm.currentState.type != StateType.InAttack && fsm.currentState.type != StateType.KnockOut) animator.SetTrigger("GetHit");
-                fsm.currentState.type = StateType.KnockOut;
+                if(fsm.currentState.type != StateType.Dead) fsm.currentState.type = StateType.KnockOut;
             }
         }
 
@@ -148,6 +175,7 @@ using UnityEngine;
                     break;
                 case StateType.MoveToTarget:
                     // :(
+                    if(target == null) fsm.currentState.type = StateType.CheckForTarget;
                     if ((transform.position - target.transform.position).sqrMagnitude <= checkForHitRadius)
                     {
                         fsm.currentState.type = StateType.HitTarget;
@@ -163,13 +191,18 @@ using UnityEngine;
                     }*/
                     break;
                 case StateType.Dead:
-                    break;
+                if (knockoutTime < Time.time)
+                {
+                    body.velocity = Vector2.zero;
+                }
+                break;
                 case StateType.InAttack:
                     break;
                 case StateType.KnockOut:
                     if(knockoutTime < Time.time)
                     {
                         fsm.currentState.type = StateType.CheckForTarget;
+                        body.velocity = Vector2.zero;
                         controller.IsActive = true;
                     }
                     break;

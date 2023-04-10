@@ -177,16 +177,11 @@ public class CombatController : NetworkBehaviour
         {
             RotatePlayer();
         }
-        //animatorController.Direction = (x * Vector2.right + y * Vector2.up).normalized;
     }
 
     private void RotatePlayer()
     {
-        /*var mouseScreenPos = look.Value;
-        var startingScreenPos = Camera.main.WorldToScreenPoint(transform.position);
-        mouseScreenPos.x -= startingScreenPos.x;
-        mouseScreenPos.y -= startingScreenPos.y;*/
-        var angle = Mathf.Atan2(look.Value.y - transform.position.y, look.Value.x - transform.position.x) * Mathf.Rad2Deg + offset;
+        var angle = Mathf.Atan2(look.Value.y, look.Value.x) * Mathf.Rad2Deg + offset;
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
 
     }
@@ -194,24 +189,9 @@ public class CombatController : NetworkBehaviour
     {
         if (!IsOwner || !context || currentWeapon == null || !alive) return;
 
-        currentWeapon.Use(this);
-    }
-    internal void Swing()
-    {
-        SubmitSwingServerRpc();
+        currentWeapon.Use();
     }
 
-    [ServerRpc]
-    private void SubmitSwingServerRpc()
-    {
-        ((MeleeWeapon)currentWeapon).SwingWeapon();
-        SwingClientRpc();
-    }
-    [ClientRpc]
-    void SwingClientRpc()
-    {
-        ((MeleeWeapon)currentWeapon).SwingWeapon();
-    }
 
     internal void ShootBullet()
     {
@@ -219,7 +199,6 @@ public class CombatController : NetworkBehaviour
         {
             prtcl.Play();
         }
-        //SubmitShootServerRpc(((Weapon)currentWeapon).canonEnd.position, ((Weapon)currentWeapon).canonEnd.rotation);
     }
     [ServerRpc]
     public void SubmitShootServerRpc(Vector3 position, Quaternion rotation)
@@ -245,7 +224,7 @@ public class CombatController : NetworkBehaviour
 
     internal void Look(Vector2 vector2)
     {
-        look.Value = vector2;
+        look.Value = (vector2 - (Vector2)transform.position).normalized;
     }
     //Called on client rpc
     public void Die()
@@ -253,10 +232,8 @@ public class CombatController : NetworkBehaviour
         if (!alive) return;
         
         alive = false;
-        //animatorController.Die();
     }
-    [ClientRpc]
-    public void SetAliveClientRpc()
+    public void SetAlive()
     {
         alive = true;
     }

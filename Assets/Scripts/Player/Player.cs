@@ -9,6 +9,7 @@ public class Player : Hitable
     [Header("Component")]
     [SerializeField] GameObject ui;
     [SerializeField] HealthBar healthbar;
+    [SerializeField] CreditsUi creditsUi;
     [SerializeField] PlayerController controller;
     [SerializeField] CombatController shooter;
 
@@ -28,6 +29,13 @@ public class Player : Hitable
             healthbar.SetMaxHealth(maxHealth);
             healthbar.SetHealth(health.Value);
             health.OnValueChanged += UpdateHealthBar;
+            Credits.OnValueChanged += UpdateCreditsUi;
+        }
+        if (IsOwner && creditsUi)
+        {
+            ui.SetActive(true);
+            healthbar.SetMaxHealth(maxHealth);
+            healthbar.SetHealth(health.Value);
         }
     }
 
@@ -77,6 +85,16 @@ public class Player : Hitable
         StartCoroutine(Respawn());
 
     }
+    /*protected override void EarnCredits(int creditBonus)
+    {
+        base.EarnCredits(creditBonus);
+        //UpdateCreditsUi(wallet.Amount - creditBonwallet.Amount);
+    }*/
+    internal void UpdateCreditsUi(int previousValue, int newValue)
+    {
+        if (creditsUi)
+            creditsUi.Amount = newValue;
+    }
     public IEnumerator Respawn()
     {
         yield return new WaitForSeconds(5f);
@@ -90,15 +108,18 @@ public class Player : Hitable
     {
         Health.Value = MaxHealth;
         shooter.Alive = true;
+        GetComponent<Collider2D>().isTrigger = false;
+        GetComponent<Collider2D>().enabled = true;
+
         SetAliveClientRpc();
-        shooter.SetAliveClientRpc();
-        controller.SetAliveClientRpc();
     }
     [ClientRpc]
     public void SetAliveClientRpc()
     {
         GetComponent<Collider2D>().isTrigger = false;
         GetComponent<Collider2D>().enabled = true;
+        shooter.SetAlive();
+        controller.SetAlive();
     }
 
     #endregion

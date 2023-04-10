@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 public class ServerInitializer : MonoBehaviour
 {
     [SerializeField] GameObject playerPrefab;
+    [SerializeField] GameObject enemyPrefab;
     [SerializeField] TMPro.TMP_InputField inputName;
 
 
@@ -23,7 +24,21 @@ public class ServerInitializer : MonoBehaviour
     //string ipAdress = "172.30.114.48";
     string ipAdress = "20.19.185.71";
 
+    
 
+    IEnumerator SpawnStuff()
+    {
+        while (true)
+        {
+            var rdnX = Random.Range(-6f, -4f);
+            var rdnY = Random.Range(2.5f, 4f);
+            var rdnSignX = Mathf.Sign(Random.Range(-1, 1));
+            var rdnSignY = Mathf.Sign(Random.Range(-1, 1));
+            GameObject go = Instantiate(enemyPrefab, new Vector3(rdnSignX * rdnX, rdnSignY * rdnY, 0f), Quaternion.identity);
+            go.GetComponent<NetworkObject>().Spawn();
+            yield return new WaitForSeconds(5f);
+        }
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -128,6 +143,7 @@ public class ServerInitializer : MonoBehaviour
         {
             //HandleClientConnected(NetworkManager.ServerClientId);
         }
+        StartCoroutine(SpawnStuff());
     }
     private void HandleClientConnected(ulong clientId)
     {

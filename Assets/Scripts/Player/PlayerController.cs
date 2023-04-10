@@ -39,8 +39,7 @@ public class PlayerController : NetworkBehaviour
     {
         alive = false;
     }
-    [ClientRpc]
-    internal void SetAliveClientRpc()
+    internal void SetAlive()
     {
         alive = true;
     }

@@ -11,6 +11,7 @@ public class AiController : MonoBehaviour
     [SerializeField] float currentTravelTime = 0f;
     [SerializeField] bool isActive = true;
     [SerializeField] NavMeshAgent agent;
+    private bool tryToActivate;
 
     public Vector3 Destination
     {
@@ -18,16 +19,25 @@ public class AiController : MonoBehaviour
         set
         {
             currentTravelTime = Time.time;
-            agent.SetDestination(value);
+            if(agent.isOnNavMesh)
+                agent.SetDestination(value);
         }
     }
 
     public bool IsActive
     {
-        get => !agent.isStopped;
+        get
+        {
+            if (agent.isOnNavMesh)
+                return !agent.isStopped;
+            else 
+                return false;
+        }
         set
         {
-            agent.isStopped = !value;
+            if (agent.isOnNavMesh)
+                agent.isStopped = !value;
+            else tryToActivate = true;
         }
     }
 
@@ -38,6 +48,12 @@ public class AiController : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (tryToActivate)
+        {
+            if (agent.isOnNavMesh)
+                agent.isStopped = true;
+            tryToActivate = false;
+        }
         // Check if we've reached the destination
         if (!agent.pathPending)
         {
@@ -60,4 +76,5 @@ public class AiController : MonoBehaviour
     {
         agent.isStopped = !v;
     }
+
 }
