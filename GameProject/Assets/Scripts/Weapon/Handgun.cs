@@ -5,7 +5,7 @@ using UnityEngine;
 public class Handgun : Weapon
 {
 
-    public override bool Use(CombatController owner)
+    public override bool Use()
     {
         /*var canShoot = base.Use(owner);
         if (!canShoot) return false;

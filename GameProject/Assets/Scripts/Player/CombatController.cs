@@ -4,6 +4,8 @@ using Unity.Netcode;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
 
 public class CombatController : NetworkBehaviour
 {
@@ -14,7 +16,8 @@ public class CombatController : NetworkBehaviour
 
     [Space]
     [Header("Item")]
-    [SerializeField] Weapon currentWeapon;
+    [SerializeField] Item currentItem;
+    [SerializeField] List<Item> allItems = new List<Item>();
 
     [Space]
     [Header("Components")]
@@ -31,31 +34,30 @@ public class CombatController : NetworkBehaviour
     [SerializeField] AudioListener audioListener;
     [SerializeField] Transform target;
     [SerializeField] Quaternion rotationOffset;
+
+
     private bool reloading;
     private bool alive = true;
+    private bool canRotate = true;
     private float lookSmoothVelocity = 2f;
 
     public Transform CameraContainer { get => cameraContainer; set => cameraContainer = value; }
 
 
     public LayerMask Hitablemask { get => hitablemask; set => hitablemask = value; }
- 
-    public Weapon CurrentWeapon
+
+    public Item CurrentItem
     {
-        get => currentWeapon;
+        get => currentItem;
         set
         {
-
-            if (currentWeapon == null  || value.Id != currentWeapon.Id)
-            {
-                currentWeapon = value;
-            }
-
-
+            currentItem = value;
         }
     }
 
+
     public bool Alive { get => alive; set => alive = value; }
+    public bool CanRotate { get => canRotate; set => canRotate = value; }
 
 
     // Update is called once per frame
@@ -71,27 +73,36 @@ public class CombatController : NetworkBehaviour
             //audioListener.enabled = true;
         }
 
-        
+        var guids = AssetDatabase.FindAssets("t:prefab", new string[] { "Assets/Prefabs/Weapons" });
+        foreach (var guid in guids)
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            allItems.Add(go.GetComponent<Item>());
+        }
     }
 
 
     private void Update()
     {
-        foreach (var prtcl in ((Weapon)currentWeapon).shootParticles)
+        if(currentItem is Weapon)
         {
-            //prtcl.transform.position = ((Weapon)currentWeapon).canonEnd.position;
-            prtcl.transform.LookAt(target);
+            foreach (var prtcl in ((Weapon)currentItem).shootParticles)
+            {
+                //prtcl.transform.position = ((Weapon)currentItem).canonEnd.position;
+                prtcl.transform.LookAt(target);
+            }
         }
-        
-
-
     }
+
     private void LateUpdate()
     {
-        RotatePlayer();
+        if (IsOwner)
+        {
+            RotatePlayer();
+            PlayAnimationServerRpc();
+        }
 
-        PlayAnimationServerRpc();
-        
     }
 
 
@@ -104,63 +115,96 @@ public class CombatController : NetworkBehaviour
     [ClientRpc]
     private void InstantiateShotContactParticlesClientRpc(int layer, Vector3 origin, Vector3 direction)
     {
-        ((Weapon)currentWeapon).InstantiateContactParticles(layer, origin, direction);
+        ((Weapon)currentItem).InstantiateContactParticles(layer, origin, direction);
     }
 
-    private void SetItemUp(Weapon value)
+
+    internal void SwitchItem(Item item)
     {
-
-        if (currentWeapon != null)
-            Destroy(currentWeapon.gameObject); ;
-        currentWeapon = Instantiate(value, rightHand);
-        //if (item.GetComponent<Weapon>()) bulletStart = item.GetComponent<Weapon>().canonEnd;
-        //else bulletStart = null;
-        currentWeapon.Id = value.GetComponent<Item>().Id;
-        currentWeapon.Prefab = value.GetComponent<Item>().Prefab;
-
-        /*if (heldItem.GetComponent<Weapon>()) bulletStart = heldItem.GetComponent<Weapon>().canonEnd;
-        else bulletStart = null;*/
-        //seat.Item = heldItem.gameObject;
-
-        //bulletStart = value.GetComponent<Weapon>().canonEnd;
-
-        //seat.Item = value.Prefab;
-        //heldItem = seat.Item.GetComponent<Item>();
-
-        /*if (heldItem is Weapon)
-        {
-            ((Weapon)currentWeapon).shootParticles[0].transform.parent.parent = seat.transform;
-        }*/
+        SubmitChangeItemServerRpc(item.Id, OwnerClientId);
     }
-
     [ServerRpc]
-    private void SubmitChangeItemServerRpc(int id, bool isWeapon)
+    private void SubmitChangeItemServerRpc(int id, ulong owner)
     {
-        if(IsServer && !IsOwner)
+        if (currentItem != null)
+            Destroy(CurrentItem.gameObject);
+        var obj = Instantiate(FindItemById(id).Prefab, transform);
+        var net = obj.GetComponent<NetworkObject>();
+        net.SpawnWithOwnership(owner, true);
+        obj.transform.parent = transform;
+        CurrentItem = obj.GetComponent<Item>();
+        CurrentItem.FindOwner();
+        SubmitChangeItemClientRpc(net.NetworkObjectId, CurrentItem.Owner.NetworkObjectId);
+
+    }
+
+    [ClientRpc]
+    private void SubmitChangeItemClientRpc(ulong objectId, ulong ownerObjId)
+    {
+        CurrentItem = GetNetworkObject(objectId).GetComponent<Item>();
+        CurrentItem.Owner = GetNetworkObject(ownerObjId).GetComponent<Hitable>();
+    }
+
+    private Item FindItemById(int id)
+    {
+        foreach(var item in allItems)
         {
-            //SetItemUp(FindItemById(id, isWeapon).Prefab.GetComponent<Item>());
+            if (item.Id == id) return item;
         }
-        ChangeItemClientRpc(id, isWeapon);
+        return null;
+    }
+
+    internal void UseItemOneShot(OneUseItem item)
+    {
+        if (!IsOwner || item == null || !alive) return;
+
+        SubmitOneShotServerRpc(item.Id, OwnerClientId);
+    }
+    [ServerRpc]
+    private void SubmitOneShotServerRpc(int id, ulong owner)
+    {
+        var obj = Instantiate(FindItemById(id).Prefab, transform);
+        var net = obj.GetComponent<NetworkObject>();
+        net.SpawnWithOwnership(owner, true);
+        obj.transform.parent = transform;
+        SubmitOneShotClientRpc(net.NetworkObjectId, CurrentItem.Owner.NetworkObjectId);
     }
     [ClientRpc]
-    private void ChangeItemClientRpc(int id, bool isWeapon)
+    private void SubmitOneShotClientRpc(ulong objectId, ulong ownerObjId)
     {
-        if (IsServer || IsOwner) return;
-        //SetItemUp(FindItemById(id, isWeapon).Prefab.GetComponent<Item>());
+        if (IsOwner)
+        {
+            var item = GetNetworkObject(objectId).GetComponent<OneUseItem>();
+            item.Owner = GetNetworkObject(ownerObjId).GetComponent<Hitable>();
+            item.UseNotHold();
+            SubmitDestroyItemServerRpc(objectId);
+        }
+    }
+    [ServerRpc]
+    private void SubmitDestroyItemServerRpc(ulong objectId)
+    {
+        var item = GetNetworkObject(objectId).GetComponent<OneUseItem>();
+        Destroy(item.gameObject);
     }
 
-    internal void SwitchItem(bool destroyCurrent = false)
+    internal void DestroyCurrentItem()
     {
-        /*if (destroyCurrent)
-        {
-            if (heldItem is Weapon) currentWeapon = null;
-            else currentTool = null;
+        SubmitDestroyCurrentItemServerRpc();
+    }
+    [ServerRpc]
+    private void SubmitDestroyCurrentItemServerRpc()
+    {
+        if (currentItem != null)
+            Destroy(CurrentItem.gameObject);
+        CurrentItem = null;
+        SubmitDestroyCurrentItemClientRpc();
 
-            Destroy(heldItem.gameObject);
-        }
+    }
 
-        if ((heldItem is Tool || heldItem == null) && currentWeapon != null) HeldItem = currentWeapon;
-        else if ((heldItem is Weapon || heldItem == null) && currentTool != null) HeldItem = currentTool;*/
+    [ClientRpc]
+    private void SubmitDestroyCurrentItemClientRpc()
+    {
+        CurrentItem = null;
     }
 
 
@@ -173,53 +217,49 @@ public class CombatController : NetworkBehaviour
     [ClientRpc]
     void PlayAnimationClientRpc()
     {
-        if(!IsOwner)
+        if (!IsOwner && canRotate)
         {
             RotatePlayer();
         }
-        //animatorController.Direction = (x * Vector2.right + y * Vector2.up).normalized;
+    }
+
+    [ServerRpc]
+    void RotatePlayerServerRpc()
+    {
+        RotatePlayerClientRpc();
+    }
+
+    [ClientRpc]
+    void RotatePlayerClientRpc()
+    {
+        if (!IsOwner)
+        {
+            RotatePlayer();
+        }
     }
 
     private void RotatePlayer()
     {
-        /*var mouseScreenPos = look.Value;
-        var startingScreenPos = Camera.main.WorldToScreenPoint(transform.position);
-        mouseScreenPos.x -= startingScreenPos.x;
-        mouseScreenPos.y -= startingScreenPos.y;*/
-        var angle = Mathf.Atan2(look.Value.y - transform.position.y, look.Value.x - transform.position.x) * Mathf.Rad2Deg + offset;
+        if (!canRotate) return;
+        var angle = Mathf.Atan2(look.Value.y, look.Value.x) * Mathf.Rad2Deg + offset;
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
+        RotatePlayerServerRpc();
 
     }
     internal void Attack(bool context)
     {
-        if (!IsOwner || !context || currentWeapon == null || !alive) return;
+        if (!IsOwner || !context || currentItem == null || !alive) return;
 
-        currentWeapon.Use(this);
-    }
-    internal void Swing()
-    {
-        SubmitSwingServerRpc();
+        currentItem.Use();
     }
 
-    [ServerRpc]
-    private void SubmitSwingServerRpc()
-    {
-        ((MeleeWeapon)currentWeapon).SwingWeapon();
-        SwingClientRpc();
-    }
-    [ClientRpc]
-    void SwingClientRpc()
-    {
-        ((MeleeWeapon)currentWeapon).SwingWeapon();
-    }
 
     internal void ShootBullet()
     {
-        foreach (var prtcl in ((Weapon)currentWeapon).shootParticles)
+        foreach (var prtcl in ((Weapon)currentItem).shootParticles)
         {
             prtcl.Play();
         }
-        //SubmitShootServerRpc(((Weapon)currentWeapon).canonEnd.position, ((Weapon)currentWeapon).canonEnd.rotation);
     }
     [ServerRpc]
     public void SubmitShootServerRpc(Vector3 position, Quaternion rotation)
@@ -231,7 +271,7 @@ public class CombatController : NetworkBehaviour
     void PlayShootParticleClientRpc(Vector3 position, Quaternion rotation)
     {
         if (IsOwner) return;
-        foreach (var prtcl in ((Weapon)currentWeapon).shootParticles)
+        foreach (var prtcl in ((Weapon)currentItem).shootParticles)
         {
             prtcl.transform.position = position;
             prtcl.transform.rotation = rotation;
@@ -245,18 +285,16 @@ public class CombatController : NetworkBehaviour
 
     internal void Look(Vector2 vector2)
     {
-        look.Value = vector2;
+        look.Value = (vector2 - (Vector2)transform.position).normalized;
     }
     //Called on client rpc
     public void Die()
     {
         if (!alive) return;
-        
+
         alive = false;
-        //animatorController.Die();
     }
-    [ClientRpc]
-    public void SetAliveClientRpc()
+    public void SetAlive()
     {
         alive = true;
     }

@@ -13,25 +13,11 @@ public class PlayerController : NetworkBehaviour
 
     public Vector2 Move { get => move.Value; set => move.Value = value; }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     // Update is called once per frame
     void Update()
     {
         if (!IsOwner || !alive) return;
-        //float horizontalInput = Input.GetAxis("Horizontal");
-        //Get the value of the Horizontal input axis.
 
-        //float verticalInput = Input.GetAxis("Vertical");
-        //Get the value of the Vertical input axis.
-
-        //move.Value = new Vector3(horizontalInput, verticalInput, 0);
-
-        //transform.Translate(move.Value * moveSpeed * Time.deltaTime);
         transform.position += (Vector3)move.Value * moveSpeed * Time.deltaTime;
     }
 
@@ -39,8 +25,7 @@ public class PlayerController : NetworkBehaviour
     {
         alive = false;
     }
-    [ClientRpc]
-    internal void SetAliveClientRpc()
+    internal void SetAlive()
     {
         alive = true;
     }

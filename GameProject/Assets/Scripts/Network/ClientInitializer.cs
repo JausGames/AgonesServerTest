@@ -17,18 +17,18 @@ public class ClientInitializer : MonoBehaviour
 
     Ping ping;
     List<int> pingsArray = new List<int>();
-    UNetTransport unetTransform;
     int pingCount = 49;
 
-    //string ipAdress = "172.30.114.48";
-    string ipAdress = "20.19.185.71";
+    UNetTransport unetTransport;
+
+    [SerializeField] bool localTest = true;
 
 
     // Start is called before the first frame update
     void Start()
     {
 
-        unetTransform = GetComponent<UNetTransport>();
+        unetTransport = GetComponent<UNetTransport>();
 
         NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
@@ -77,9 +77,41 @@ public class ClientInitializer : MonoBehaviour
 
     public void Client()
     {
-        //if (inputName.text == "") return;
-        // Set password ready to send to the server to validate
-        //NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(inputName.text);
+        if(!localTest)
+            CheckForServers();
+        else
+        {
+            // Set password ready to send to the server to validate
+            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+            NetworkManager.Singleton.StartClient();
+        }
+    }
+
+    // Update is called once per frame
+    void CheckForServers()
+    {
+        var http = gameObject.AddComponent<HttpRequestHelper>();
+        CoroutineWithData cd = new CoroutineWithData(this, http.GetServerList());
+        StartCoroutine(WaitForGameServers(cd));
+    }
+    private IEnumerator WaitForGameServers(CoroutineWithData corout)
+    {
+        //wait
+        while (!(corout.result is string) || corout.result == null)
+        {
+            Debug.Log("EditorUI, WaitForLogin : data is null");
+            yield return false;
+        }
+        //do stuff
+        var gs = JsonHelper.FromJson<GameServer>((string)corout.result);
+        //unetTransport.ConnectAddress = 
+
+        Debug.Log(gs);
+
+        unetTransport.ConnectAddress = gs[0].ip;
+        unetTransport.ConnectPort = gs[0].port;
+        unetTransport.ServerListenPort = gs[0].port;
+
         NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
         NetworkManager.Singleton.StartClient();
     }
@@ -87,18 +119,13 @@ public class ClientInitializer : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsHost)
         {
-            //MLAPI
-            //NetworkManager.Singleton.StopHost();
+
             NetworkManager.Singleton.ConnectionApprovalCallback -= ApprovalCheck;
         }
         else if (NetworkManager.Singleton.IsClient)
         {
-            //MLAPI
-            //NetworkManager.Singleton.StopClient();
-        }
 
-        //passwordEntryUI.SetActive(true);
-        //leaveButton.SetActive(false);
+        }
     }
 
     private void HandleServerStarted()

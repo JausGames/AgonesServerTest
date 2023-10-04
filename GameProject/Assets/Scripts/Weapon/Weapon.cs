@@ -11,13 +11,11 @@ abstract public class Weapon : Item
 
     [Header("Components")]
     [SerializeField] public List<ParticleSystem> shootParticles;
-    Hitable owner;
-    public Hitable Owner { get => owner; set => owner = value; }
     private int ammo;
 
     public WeaponStat Stats { get => stats; set => stats = value; }
 
-    public override bool Use(CombatController owner)
+    public override bool Use()
     {
         Debug.Log("Weapon, Use : Time = " + Time.time);
         Debug.Log("Weapon, Use : nextShot = " + nextShot);
@@ -26,7 +24,7 @@ abstract public class Weapon : Item
 
         //owner.CameraFollow.RotationOffset = rndRecoil;
         //VFX
-        owner.ShootBullet();
+        //owner.ShootBullet();
         return true;
     }
     private void Awake()

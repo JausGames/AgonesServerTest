@@ -11,6 +11,8 @@ public class AiController : MonoBehaviour
     [SerializeField] float currentTravelTime = 0f;
     [SerializeField] bool isActive = true;
     [SerializeField] NavMeshAgent agent;
+    private bool tryToActivate;
+    private bool activationValue;
 
     public Vector3 Destination
     {
@@ -18,28 +20,42 @@ public class AiController : MonoBehaviour
         set
         {
             currentTravelTime = Time.time;
-            agent.SetDestination(value);
+            if (agent.isOnNavMesh)
+                agent.SetDestination(value);
         }
     }
 
     public bool IsActive
     {
-        get => !agent.isStopped;
+        get
+        {
+            if (agent.isOnNavMesh && agent.isActiveAndEnabled)
+                return !agent.isStopped;
+            else
+                return false;
+        }
         set
         {
-            agent.isStopped = !value;
+            EnableAgent(value);
         }
     }
 
     public UnityEvent DestinationReachedOrUnreachable { get => destinationReachedOrUnreachable; set => destinationReachedOrUnreachable = value; }
     public float Speed { get => agent.velocity.magnitude / agent.speed; }
 
+    public void StopAgent()
+    {
+        agent.velocity = Vector3.zero;
+    }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (tryToActivate)
+            EnableAgent(activationValue);
+
         // Check if we've reached the destination
-        if (!agent.pathPending)
+        if (!agent.pathPending && agent.isActiveAndEnabled && agent.isOnNavMesh)
         {
             if (agent.remainingDistance <= agent.stoppingDistance)
             {
@@ -58,6 +74,16 @@ public class AiController : MonoBehaviour
 
     internal void EnableAgent(bool v)
     {
-        agent.isStopped = !v;
+
+        if (!agent.isActiveAndEnabled || !agent.isOnNavMesh)
+        {
+            tryToActivate = true;
+            activationValue = v;
+        }
+        else 
+            agent.isStopped = !v;
+
+
     }
+
 }
