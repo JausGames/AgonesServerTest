@@ -15,7 +15,7 @@ az group create --name $AKS_RESOURCE_GROUP --location $AKS_LOCATION
 az aks create --resource-group $AKS_RESOURCE_GROUP --name $AKS_NAME --node-count 1 --generate-ssh-keys --node-vm-size standard_f4s_v2 --kubernetes-version 1.24.6 --enable-node-public-ip 
 
 # Install kubectl
-sudo az aks install-cli
+az aks install-cli
 
 # Get credentials for your new AKS cluster
 az aks get-credentials --resource-group $AKS_RESOURCE_GROUP --name $AKS_NAME
