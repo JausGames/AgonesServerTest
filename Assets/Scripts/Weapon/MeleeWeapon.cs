@@ -12,7 +12,8 @@ public class MeleeWeapon : Weapon
     private float startPosition;
     [Header("Swing melee")]
     [SerializeField] float swingAngle = 60f;
-    [SerializeField] NetworkVariable<bool> isOnRight = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    [SerializeField] NetworkVariable<bool> isOnRightSide = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
 
 
     public override bool Use()
@@ -26,17 +27,31 @@ public class MeleeWeapon : Weapon
     }
     private void Awake()
     {
-        Owner = GetComponentInParent<Hitable>();
+        FindOwner();
         trigger = GetComponentInChildren<WeaponTrigger>();
         trigger.Weapon = this;
         trigger.enabled = false;
         if (Owner)
-            transform.localRotation = Quaternion.Euler(0, 0, isOnRight.Value ? swingAngle : -swingAngle);
+            transform.localRotation = Quaternion.Euler(0, 0, isOnRightSide.Value ? swingAngle : -swingAngle);
+        isOnRightSide.OnValueChanged += OnWeaponSideValueChange;
+    }
+    private void OnWeaponSideValueChange(bool previous, bool current)
+    {
+        startSwingTime = Time.time;
+        startPosition = transform.localEulerAngles.z;
+        trigger.ActivateTrigger();
+        Owner.SoundManager.PlayClip(clipUse);
+        foreach (var prtcl in shootParticles)
+        {
+            if (prtcl.isPaused || prtcl.isStopped) prtcl.Play();
+            var em = prtcl.emission;
+            em.enabled = true;
+        }
     }
 
     private void Update()
     {
-        var desiredAngle = isOnRight.Value ? swingAngle : -swingAngle;
+        var desiredAngle = isOnRightSide.Value ? swingAngle : -swingAngle;
         if (transform.localEulerAngles.z != desiredAngle)
         {
             var time = Mathf.Min((Time.time - startSwingTime) / swingTime, 1f);
@@ -54,7 +69,7 @@ public class MeleeWeapon : Weapon
             }
         }
     }
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void SubmitSwingServerRpc()
     {
         SwingWeapon();
@@ -69,15 +84,6 @@ public class MeleeWeapon : Weapon
     internal void SwingWeapon()
     {
         if(IsOwner)
-            isOnRight.Value = !isOnRight.Value;
-        startSwingTime = Time.time;
-        startPosition = transform.localEulerAngles.z;
-        trigger.ActivateTrigger();
-        foreach(var prtcl in shootParticles)
-        {
-            if (prtcl.isPaused || prtcl.isStopped) prtcl.Play();
-            var em = prtcl.emission;
-            em.enabled = true;
-        }
+            isOnRightSide.Value = !isOnRightSide.Value;
     }
 }

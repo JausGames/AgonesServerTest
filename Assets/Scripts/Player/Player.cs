@@ -8,17 +8,30 @@ public class Player : Hitable
 {
     [Header("Component")]
     [SerializeField] GameObject ui;
+    [SerializeField] Inventory inventory;
     [SerializeField] HealthBar healthbar;
     [SerializeField] CreditsUi creditsUi;
     [SerializeField] PlayerController controller;
-    [SerializeField] CombatController shooter;
+    [SerializeField] CombatController combat;
 
-    public NetworkVariable<float> Health { get => health; set => health = value; }
+    Interactable currentInteractable;
+    private bool inInteraction;
+
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
+    public bool InInteraction
+    {
+        get => inInteraction;
+        set
+        {
+            combat.CanRotate = !value;
+            inInteraction = value;
+        }
+    }
+
 
     public void Start()
     {
-        shooter = GetComponent<CombatController>();
+        combat = GetComponent<CombatController>();
         if (IsServer)
         {
             health.Value = maxHealth;
@@ -39,6 +52,93 @@ public class Player : Hitable
         }
     }
 
+    internal void UseOrSwitchQuickItem(int value)
+    {
+        var item = inventory.QuickItems[value].Item;
+
+        if(item is OneUseItem)
+        {
+            combat.UseItemOneShot((OneUseItem)item);
+            inventory.DestroyOneShotItem((OneUseItem)item);
+        }
+        else if(item is Weapon)
+        {
+            inventory.CurrentItem.Item = item;
+            SetHoldItem(item);
+        }
+    }
+
+    internal void SetHoldItem(Item item)
+    {
+        if (item == null)
+        {
+            combat.DestroyCurrentItem();
+            inventory.DestroyCurrentItem();
+        }
+        else
+            combat.SwitchItem(item);
+    }
+
+    internal void OpenCloseInventory()
+    {
+        inventory.OpenInventory();
+    }
+
+    internal void TryInteract()
+    {
+        if (currentInteractable)
+        {
+            if (InInteraction)
+            {
+                currentInteractable.CloseInteract(this);
+                InInteraction = false;
+            }
+            else
+            {
+                currentInteractable.Interact(this);
+                InInteraction = true;
+            }
+        }
+    }
+
+    internal void AddObjectToInventory(Item item)
+    {
+        inventory.AddItem(item);
+    }
+
+    private void Update()
+    {
+        var col = Physics2D.OverlapCircle(transform.position + transform.up, .2f, LayerMask.GetMask("Interactable"));
+        if (col)
+        {
+            var interactable = col.GetComponent<Interactable>() != null ? col.GetComponent<Interactable>() : col.GetComponentInChildren<Interactable>();
+            if (interactable && currentInteractable != interactable)
+            {
+                Debug.Log("Player, Update : Switch");
+                if (currentInteractable)
+                    currentInteractable.HideInteractionText();
+                currentInteractable = interactable;
+                interactable.ShowInteractionText();
+            }
+        }
+        else if (currentInteractable)
+        {
+
+            Debug.Log("Player, Update : Stop");
+            currentInteractable.HideInteractionText();
+            if (InInteraction)
+                currentInteractable.CloseInteract(this);
+            currentInteractable = null;
+            InInteraction = false;
+
+        }
+    }
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position + transform.up, .2f);
+    }
+
     // Update is called once per frame
     void LateUpdate()
     {
@@ -46,20 +146,6 @@ public class Player : Hitable
     }
 
     #region Health / get hit / die
-    public void SetHealth(float health)
-    {
-        this.health.Value = health;
-    }
-    public void AddHealth(float regenValue)
-    {
-        SubmitAddHealthServerRpc(regenValue);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void SubmitAddHealthServerRpc(float regenValue)
-    {
-        this.health.Value = Mathf.Min(health.Value + regenValue, maxHealth);
-    }
 
     public override void TakeDamage(float damage, float knockback, float knocktime, Vector3 direction, ulong killerId)
     {
@@ -77,7 +163,7 @@ public class Player : Hitable
 
     public override void Die()
     {
-        shooter.Die();
+        combat.Die();
         controller.Die();
         GetComponent<Collider2D>().isTrigger = true;
         GetComponent<Collider2D>().enabled = false;
@@ -107,7 +193,7 @@ public class Player : Hitable
     private void SubmitRespawnServerRpc()
     {
         Health.Value = MaxHealth;
-        shooter.Alive = true;
+        combat.Alive = true;
         GetComponent<Collider2D>().isTrigger = false;
         GetComponent<Collider2D>().enabled = true;
 
@@ -118,7 +204,7 @@ public class Player : Hitable
     {
         GetComponent<Collider2D>().isTrigger = false;
         GetComponent<Collider2D>().enabled = true;
-        shooter.SetAlive();
+        combat.SetAlive();
         controller.SetAlive();
     }
 

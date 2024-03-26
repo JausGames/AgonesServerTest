@@ -11,8 +11,6 @@ abstract public class Weapon : Item
 
     [Header("Components")]
     [SerializeField] public List<ParticleSystem> shootParticles;
-    Hitable owner;
-    public Hitable Owner { get => owner; set => owner = value; }
     private int ammo;
 
     public WeaponStat Stats { get => stats; set => stats = value; }
