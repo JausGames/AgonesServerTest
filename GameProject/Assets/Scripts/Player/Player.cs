@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
 public class Player : Hitable
 {
+    public NetworkVariable<FixedString64Bytes> playerName = new NetworkVariable<FixedString64Bytes>("no name", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     [Header("Component")]
     [SerializeField] GameObject ui;
     [SerializeField] Inventory inventory;
@@ -27,6 +29,7 @@ public class Player : Hitable
             inInteraction = value;
         }
     }
+    public string Name { get => playerName.Value.ToString(); set => playerName.Value = new FixedString64Bytes(value); }
 
 
     public void Start()

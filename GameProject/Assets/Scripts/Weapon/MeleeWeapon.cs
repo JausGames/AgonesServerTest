@@ -78,12 +78,13 @@ public class MeleeWeapon : Weapon
     [ClientRpc]
     void SwingClientRpc()
     {
-        SwingWeapon();
+        if (!IsHost)
+            SwingWeapon();
     }
 
     internal void SwingWeapon()
     {
-        if(IsOwner)
+        if (IsOwner)
             isOnRightSide.Value = !isOnRightSide.Value;
     }
 }

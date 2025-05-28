@@ -8,12 +8,7 @@ public class EnemySpawner : NetworkBehaviour
     [SerializeField] GameObject prefab;
     [SerializeField] List<GameObject> spawnedStuff;
 
-    private void OnServerInitialized()
-    {
-        Debug.Log("OnServerInitialized");
-        /*GameObject go = Instantiate(prefab, new Vector3(-5f, 3f, 0f), Quaternion.identity);
-        go.GetComponent<NetworkObject>().Spawn();*/
-    }
+
     public IEnumerator SpawnStuff()
     {
         while (true)

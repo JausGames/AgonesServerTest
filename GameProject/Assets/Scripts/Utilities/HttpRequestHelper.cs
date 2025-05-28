@@ -4,20 +4,40 @@ using UnityEngine.Networking;
 using System.Collections.Generic;
 using System;
 
+[System.Serializable]
+public class PlayerGameInfo
+{
+    public string name;
+    public string id;
+    public float elo;
+    public string gameVersion;
+}
 public class HttpRequestHelper : MonoBehaviour
 {
-    const string API_URL = "http://localhost/servers/ready";
+    const string API_URL = "https://gameserver-mmapp.azurewebsites.net/api/findserver";
 
 
-    public IEnumerator GetServerList()
+    public IEnumerator GetServer(PlayerGameInfo playerGameInfo)
     {
-        UnityWebRequest www = UnityWebRequest.Get(API_URL);
+        // Serialize the playerGameInfo object to JSON
+        string jsonBody = JsonUtility.ToJson(playerGameInfo);
+
+        // Create a UnityWebRequest for POST, with the JSON body
+        UnityWebRequest www = new UnityWebRequest(API_URL, "POST");
+        byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(jsonBody);
+        www.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+        www.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+
+        // Set the content type header to application/json
+        www.SetRequestHeader("Content-Type", "application/json");
+        //www.SetRequestHeader("USERKEY", MazeUser.GetInstance().GetApiKey()); // Use if you need to set a custom header
+
         //www.SetRequestHeader("USERKEY", MazeUser.GetInstance().GetApiKey());
         yield return www.SendWebRequest();
         string output = null;
         if (www.result != UnityWebRequest.Result.Success)
         {
-            Debug.Log("HttpRequestHelper, GetMazeList: error : " + www.error);
+            Debug.Log("HttpRequestHelper, GetServer: error : " + www.error);
             yield return null;
         }
         else
@@ -25,7 +45,7 @@ public class HttpRequestHelper : MonoBehaviour
             output = www.downloadHandler.text;
             yield return output;
             // Show results as text
-            Debug.Log("HttpRequestHelper, GetMazeList : success : " + output);
+            Debug.Log("HttpRequestHelper, GetServer : success : " + output);
 
             // Or retrieve results as binary data
             byte[] results = www.downloadHandler.data;
